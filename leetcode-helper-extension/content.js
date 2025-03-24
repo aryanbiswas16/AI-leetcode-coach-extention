@@ -1,0 +1,1 @@
+console.log('LeetCode Helper Extension loaded');
