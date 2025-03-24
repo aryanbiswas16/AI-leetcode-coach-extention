@@ -23,11 +23,15 @@ function getCodeSnippet() {
 
 // Listen for messages from the background or popup script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log('Received message:', request);
     if (request.action === 'getProblemData') {
         const problemData = getProblemData();
+        console.log('Sending problem data:', problemData);
         sendResponse(problemData);
     } else if (request.action === 'getCodeSnippet') {
         const codeSnippet = getCodeSnippet();
+        console.log('Sending code snippet:', codeSnippet);
         sendResponse({ code: codeSnippet });
     }
+    return true; // Indicate that the response will be sent asynchronously
 });
