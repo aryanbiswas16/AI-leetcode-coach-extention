@@ -21,13 +21,25 @@ async function fetchAIResponse() {
                     role: 'user',
                     content: 'Give me a leetcode problem solving tip'
                 }],
-                max_tokens: 150
+                max_tokens: 200
             })
         });
 
         const data = await response.json();
+        
+        // Add error checking for the API response
+        if (!response.ok) {
+            throw new Error(`API Error: ${data.error?.message || 'Unknown error'}`);
+        }
+
+        // Check if data.choices exists and has items
+        if (!data.choices || data.choices.length === 0) {
+            throw new Error('No response choices returned from API');
+        }
+
         return data.choices[0].message.content;
     } catch (error) {
+        console.error('Error details:', error);
         return `Error: ${error.message}`;
     }
-}
+}             
