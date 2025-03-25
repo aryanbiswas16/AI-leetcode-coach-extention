@@ -1,10 +1,22 @@
 body {
-    width: 600px;
+    width: 300px;
     height: 400px;
     padding: 20px;
     background-color: #2b2c2b;
+    border-radius: 12px;
+    overflow: hidden;  
 }
   
+
+textarea {
+    border-radius: 8px;
+    width: 100%;
+    min-height: 150px;
+    margin-bottom: 10px;
+    padding: 8px;
+    resize: none;
+}
+
 button {
     padding: 8px 16px;
     margin: 5px;
