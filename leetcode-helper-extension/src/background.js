@@ -5,6 +5,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         getLeetCodeDataAndFetchAIResponse().then(sendResponse);
         return true; 
     }
+    if (request.action === 'getSolution') {
+        getLeetCodeDataAndFetchSolution().then(sendResponse);
+        return true;
+    }
 });
 
 async function getLeetCodeDataAndFetchAIResponse() {
@@ -27,6 +31,22 @@ async function getLeetCodeDataAndFetchAIResponse() {
     }
 }
 
+// Add new function for solution
+async function getLeetCodeDataAndFetchSolution() {
+    try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const leetCodeData = await new Promise((resolve) => {
+            chrome.tabs.sendMessage(tab.id, { action: 'getLeetCodeData' }, resolve);
+        });
+        
+        const prompt = createSolutionPrompt(leetCodeData);
+        return await fetchAIResponse(prompt);
+    } catch (error) {
+        console.error('Error:', error);
+        return `Error: ${error.message}`;
+    }
+}
+
 function createPromptFromLeetCodeData(leetCodeData) {
     const { problemData, codeSnippet } = leetCodeData;
     return `
@@ -39,6 +59,18 @@ function createPromptFromLeetCodeData(leetCodeData) {
         ${codeSnippet}
         
         Please tell me what this problem is and give me feedback on my current code and how to solve it.
+    `;
+}
+
+function createSolutionPrompt(leetCodeData) {
+    const { problemData } = leetCodeData;
+    return `
+        Please provide a detailed solution for this LeetCode problem:
+        Title: ${problemData.title}
+        Difficulty: ${problemData.difficulty}
+        Description: ${problemData.description}
+        
+        Explain the solution approach and provide the code implementation.
     `;
 }
 

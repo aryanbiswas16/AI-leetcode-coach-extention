@@ -5,9 +5,19 @@
     <link rel="stylesheet" href="popup.css">
 </head>
 <body>
+    <div class="header">
+        <div class="tab-button active" data-tab="hint">Hint</div>
+        <div class="tab-button" data-tab="solution">Solution</div>
+    </div>
     <div class="container">
-        <textarea id="message" readonly></textarea>
-        <button id="HintButton">Hint</button>
+        <div id="hint-tab" class="tab-content active">
+            <textarea id="message" readonly></textarea>
+            <button id="HintButton">Hint</button>
+        </div>
+        <div id="solution-tab" class="tab-content">
+            <textarea id="solution-message" readonly></textarea>
+            <button id="SolutionButton">Get Solution</button>
+        </div>
     </div>
     <script src="popup.js"></script>
 </body>

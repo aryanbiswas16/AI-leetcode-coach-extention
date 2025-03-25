@@ -1,12 +1,48 @@
 body {
     width: 300px;
     height: 400px;
-    padding: 20px;
+    padding: 0;
+    margin: 0;
     background-color: #2b2c2b;
     border-radius: 12px;
-    overflow: hidden;  
+    overflow: hidden;
 }
-  
+
+.header {
+    display: flex;
+    background-color: #1e1f1e;
+    padding: 10px;
+    border-bottom: 1px solid #555855;
+}
+
+.tab-button {
+    padding: 8px 16px;
+    margin-right: 5px;
+    color: #ffffff;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.tab-button:hover {
+    background-color: #3a3b3a;
+}
+
+.tab-button.active {
+    background-color: #555855;
+}
+
+.container {
+    padding: 20px;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
 
 textarea {
     border-radius: 8px;
@@ -26,8 +62,12 @@ button {
     border-radius: 4px;
     cursor: pointer;
 }
-  
-#message {
+
+button:hover {
+    background-color: #666966;
+}
+
+#message, #solution-message {
     margin-top: 10px;
     font-size: 14px;
     color: aliceblue;
@@ -36,7 +76,7 @@ button {
     border-radius: 4px;
     padding: 12px;
     width: calc(100% - 26px);
-    height: 300px;
+    height: 250px;
     outline: none;
     resize: none;
 }
