@@ -58,7 +58,8 @@ function createPromptFromLeetCodeData(leetCodeData) {
         Current Code:
         ${codeSnippet}
         
-        Please tell me what this problem is and give me feedback on my current code and how to solve it.
+        tell me the title, a brief description for the problem (as provided by previous description) and if you have recieved the current code
+        make sure to tell me if the fields
     `;
 }
 

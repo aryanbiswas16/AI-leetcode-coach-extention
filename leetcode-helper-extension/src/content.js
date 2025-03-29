@@ -56,59 +56,68 @@ function getProblemData() {
     return { title, description, difficulty, examples };
 }
 
-// Function to extract the user's code snippet
-function getCodeSnippet() {
-    try {
-        // Try Monaco editor first (current LeetCode editor)
-        if (window.monaco && window.monaco.editor) {
-            const editor = window.monaco.editor.getModels()[0] || 
-                          window.monaco.editor.getEditors()[0];
-            if (editor) {
-                const code = typeof editor.getValue === 'function' ? 
-                    editor.getValue() : editor.getModel().getValue();
-                console.log('Scraped Code from Monaco editor:', code);
-                return code;
-            }
-        }
+function getProblemDataFromMeta() {
+    const descriptionMeta = document.querySelector('meta[name="description"]');
+    const titleMeta = document.querySelector('meta[property="og:title"]');
+    
+    if (descriptionMeta && titleMeta) {
+        const title = titleMeta.getAttribute('content').replace(' - LeetCode', '');
+        const description = descriptionMeta.getAttribute('content');
         
-        // Try getting the code from the ace editor element
-        const aceEditor = document.querySelector('.ace_content');
-        if (aceEditor) {
-            const code = Array.from(aceEditor.querySelectorAll('.ace_line'))
-                .map(line => line.textContent)
-                .join('\n');
-            console.log('Scraped Code from Ace editor:', code);
-            return code;
-        }
+        // Parse difficulty and examples from the description if needed
         
-        // Try getting from code mirror
-        const cmEditor = document.querySelector('.CodeMirror');
-        if (cmEditor && cmEditor.CodeMirror) {
-            const code = cmEditor.CodeMirror.getValue();
-            console.log('Scraped Code from CodeMirror:', code);
-            return code;
-        }
-        
-        // Last resort - try to find any code block
-        const codeBlock = document.querySelector('code[class*="language-"]') ||
-                         document.querySelector('.CodeRunner-wrapper pre');
-        if (codeBlock) {
-            const code = codeBlock.textContent;
-            console.log('Scraped Code from code block:', code);
-            return code;
-        }
-        
-        throw new Error('No code editor found');
-    } catch (error) {
-        console.error('Error getting code snippet:', error);
-        return 'No code found';
+        return { title, description };
     }
+    
+    // Fall back to DOM scraping if meta tags aren't available
+    return getProblemData();
 }
+
+function getCodeSnippet() {
+    return new Promise((resolve) => {
+      // Create a script element to execute in the page context
+      const script = document.createElement('script');
+      
+      // This script will extract the code and store it in a data attribute
+      script.textContent = `
+        try {
+          if (window.monaco && window.monaco.editor) {
+            const models = window.monaco.editor.getModels();
+            if (models.length > 0) {
+              const code = models[0].getValue();
+              document.body.setAttribute('data-editor-code', code);
+            }
+          }
+        } catch (e) {
+          console.error("Error extracting code:", e);
+        }
+      `;
+      
+      // Inject the script
+      document.body.appendChild(script);
+      
+      // Remove the script after execution
+      script.remove();
+      
+      // Wait a moment for the script to execute
+      setTimeout(() => {
+        // Read the code from the data attribute
+        const code = document.body.getAttribute('data-editor-code');
+        if (code) {
+          resolve(code);
+        } else {
+          resolve("Could not extract code from editor");
+        }
+        // Clean up
+        document.body.removeAttribute('data-editor-code');
+      }, 100);
+    });
+  }
 
 // Get both problem data and code snippet
 function getLeetCodeData() {
     return {
-        problemData: getProblemData(),
+        problemData: getProblemDataFromMeta(),
         codeSnippet: getCodeSnippet()
     };
 }
@@ -122,7 +131,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const immediateData = getLeetCodeData();
         
         // If we got meaningful data, send it back
-        if (immediateData.problemData.title !== 'Unknown Title' && 
+        if (immediateData.problemData.title && 
             immediateData.codeSnippet !== 'No code found') {
             console.log('Sending immediate data:', immediateData);
             sendResponse(immediateData);
@@ -151,7 +160,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Handle individual data requests too
     if (request.action === 'getProblemData') {
         waitForElement('[data-cy="question-title"], .css-v3d350, .question-title', () => {
-            const problemData = getProblemData();
+            const problemData = getProblemDataFromMeta();
             console.log('Sending problem data:', problemData);
             sendResponse(problemData);
         });
