@@ -73,23 +73,9 @@ function getProblemDataFromMeta() {
     return getProblemData();
 }
 
-function getCodeSnippet() {
-    return new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(
-            { action: 'executeScriptForCode' },
-            (response) => {
-                if (chrome.runtime.lastError) {
-                    console.error('Error executing script:', chrome.runtime.lastError.message);
-                    resolve("Could not extract code from editor");
-                } else {
-                    resolve(response?.code || "Could not extract code from editor");
-                }
-            }
-        );
-    });
-}
 
-function getCodeSnippetFromDOM() {
+
+function getCodeSnippet() {
     const lines = document.querySelectorAll('.monaco-editor .view-line');
     const code = Array.from(lines).map(line => line.textContent).join('\n');
     console.log("Extracted code from DOM:", code);

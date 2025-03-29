@@ -85,7 +85,7 @@ function createPromptFromLeetCodeData(leetCodeData) {
         ${codeSnippet}
         
         tell me the title, a brief description for the problem (as provided by previous description) and if you have recieved the current code
-        make sure to tell me if the fields
+       print it.
     `;
 }
 
