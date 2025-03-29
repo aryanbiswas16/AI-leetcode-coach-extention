@@ -26,82 +26,83 @@ function waitForElement(selector, callback, timeout = 10000) {
 
 // Function to extract problem data
 function getProblemData() {
-    // Try multiple possible selectors
-    const titleElement = document.querySelector('[data-cy="question-title"]') || 
-                         document.querySelector('.css-v3d350') ||
-                         document.querySelector('.question-title');
+    // Updated selectors for latest LeetCode UI
+    const titleElement = document.querySelector('div[data-cy="question-title"]') || 
+                        document.querySelector('.mr-2.text-lg.font-medium') ||
+                        document.querySelector('div[class*="title"]');
     
-    const descriptionElement = document.querySelector('[data-cy="question-content"]') || 
-                               document.querySelector('.content__u3I1') ||
-                               document.querySelector('.question-content');
+    const descriptionElement = document.querySelector('div[data-cy="question-content"]') ||
+                              document.querySelector('div[class*="description"]') ||
+                              document.querySelector('.content__u3I1.question-content__JfgR');
     
-    const difficultyElement = document.querySelector('.css-10o4wqw') || 
-                              document.querySelector('[diff]');
+    const difficultyElement = document.querySelector('div[data-cy="question-difficulty"]') ||
+                             document.querySelector('div[diff]') ||
+                             document.querySelector('.difficulty-label');
     
-    // Extract constraints and examples
-    const exampleBlocks = Array.from(document.querySelectorAll('.example-block') || 
-                                    document.querySelectorAll('.example'));
+    // Extract examples using updated selectors
+    const exampleBlocks = Array.from(document.querySelectorAll('pre[class*="example-"]') || 
+                                   document.querySelectorAll('.example-testcase'));
     
-    const examples = exampleBlocks.map(block => block.innerText).join('\n\n');
+    const examples = exampleBlocks.map(block => block.textContent).join('\n\n');
     
-    const title = titleElement ? titleElement.innerText : 'Unknown Title';
-    const description = descriptionElement ? descriptionElement.innerText : 'No description found';
-    const difficulty = difficultyElement ? difficultyElement.innerText : 'Unknown Difficulty';
+    // Clean up the extracted text
+    const title = titleElement ? titleElement.textContent.trim() : 'Unknown Title';
+    const description = descriptionElement ? 
+        descriptionElement.textContent.replace(/\s+/g, ' ').trim() : 
+        'No description found';
+    const difficulty = difficultyElement ? difficultyElement.textContent.trim() : 'Unknown Difficulty';
     
     console.log('Scraped Problem Data:', { title, description, difficulty, examples });
     return { title, description, difficulty, examples };
 }
 
 // Function to extract the user's code snippet
-// apparently leetcode uses monaco so we can manipulate using that 
-// most complex part tries a bunch of different shit to get the code snippet
 function getCodeSnippet() {
-    // Try to access Monaco editor directly
-    if (window.monaco && window.monaco.editor) {
-        const editors = window.monaco.editor.getEditors();
-        if (editors.length > 0) {
-            const code = editors[0].getValue();
-            console.log('Scraped Code from Monaco editor:', code);
+    try {
+        // Try Monaco editor first (current LeetCode editor)
+        if (window.monaco && window.monaco.editor) {
+            const editor = window.monaco.editor.getModels()[0] || 
+                          window.monaco.editor.getEditors()[0];
+            if (editor) {
+                const code = typeof editor.getValue === 'function' ? 
+                    editor.getValue() : editor.getModel().getValue();
+                console.log('Scraped Code from Monaco editor:', code);
+                return code;
+            }
+        }
+        
+        // Try getting the code from the ace editor element
+        const aceEditor = document.querySelector('.ace_content');
+        if (aceEditor) {
+            const code = Array.from(aceEditor.querySelectorAll('.ace_line'))
+                .map(line => line.textContent)
+                .join('\n');
+            console.log('Scraped Code from Ace editor:', code);
             return code;
         }
-    }
-    
-    // Try to access the editor through the LeetCode global object
-    if (window.leetcode && window.leetcode.getEditor) {
-        const editor = window.leetcode.getEditor();
-        if (editor && editor.getValue) {
-            const code = editor.getValue();
-            console.log('Scraped Code from LeetCode editor:', code);
+        
+        // Try getting from code mirror
+        const cmEditor = document.querySelector('.CodeMirror');
+        if (cmEditor && cmEditor.CodeMirror) {
+            const code = cmEditor.CodeMirror.getValue();
+            console.log('Scraped Code from CodeMirror:', code);
             return code;
         }
+        
+        // Last resort - try to find any code block
+        const codeBlock = document.querySelector('code[class*="language-"]') ||
+                         document.querySelector('.CodeRunner-wrapper pre');
+        if (codeBlock) {
+            const code = codeBlock.textContent;
+            console.log('Scraped Code from code block:', code);
+            return code;
+        }
+        
+        throw new Error('No code editor found');
+    } catch (error) {
+        console.error('Error getting code snippet:', error);
+        return 'No code found';
     }
-    
-    // Fallback methods
-    const codeElements = document.querySelectorAll('pre[class*="language-"]');
-    if (codeElements.length > 0) {
-        const code = codeElements[0].textContent;
-        console.log('Scraped Code from pre element:', code);
-        return code;
-    }
-    
-    // Last resort - try to find the textarea
-    const codeEditor = document.querySelector('.monaco-editor textarea');
-    if (codeEditor) {
-        const code = codeEditor.value;
-        console.log('Scraped Code from textarea:', code);
-        return code;
-    }
-    
-    // Try to find code in the CodeMirror editor (older LeetCode interface)
-    const codeMirrorLines = document.querySelectorAll('.CodeMirror-line');
-    if (codeMirrorLines.length > 0) {
-        const code = Array.from(codeMirrorLines).map(line => line.textContent).join('\n');
-        console.log('Scraped Code from CodeMirror:', code);
-        return code;
-    }
-    
-    console.log('No code found');
-    return 'No code found';
 }
 
 // Get both problem data and code snippet
