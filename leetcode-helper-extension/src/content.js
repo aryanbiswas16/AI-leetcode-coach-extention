@@ -74,45 +74,27 @@ function getProblemDataFromMeta() {
 }
 
 function getCodeSnippet() {
-    return new Promise((resolve) => {
-      // Create a script element to execute in the page context
-      const script = document.createElement('script');
-      
-      // This script will extract the code and store it in a data attribute
-      script.textContent = `
-        try {
-          if (window.monaco && window.monaco.editor) {
-            const models = window.monaco.editor.getModels();
-            if (models.length > 0) {
-              const code = models[0].getValue();
-              document.body.setAttribute('data-editor-code', code);
+    return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(
+            { action: 'executeScriptForCode' },
+            (response) => {
+                if (chrome.runtime.lastError) {
+                    console.error('Error executing script:', chrome.runtime.lastError.message);
+                    resolve("Could not extract code from editor");
+                } else {
+                    resolve(response?.code || "Could not extract code from editor");
+                }
             }
-          }
-        } catch (e) {
-          console.error("Error extracting code:", e);
-        }
-      `;
-      
-      // Inject the script
-      document.body.appendChild(script);
-      
-      // Remove the script after execution
-      script.remove();
-      
-      // Wait a moment for the script to execute
-      setTimeout(() => {
-        // Read the code from the data attribute
-        const code = document.body.getAttribute('data-editor-code');
-        if (code) {
-          resolve(code);
-        } else {
-          resolve("Could not extract code from editor");
-        }
-        // Clean up
-        document.body.removeAttribute('data-editor-code');
-      }, 100);
+        );
     });
-  }
+}
+
+function getCodeSnippetFromDOM() {
+    const lines = document.querySelectorAll('.monaco-editor .view-line');
+    const code = Array.from(lines).map(line => line.textContent).join('\n');
+    console.log("Extracted code from DOM:", code);
+    return code;
+}
 
 // Get both problem data and code snippet
 function getLeetCodeData() {

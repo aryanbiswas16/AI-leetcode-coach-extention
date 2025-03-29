@@ -3,9 +3,9 @@
   "name": "Leetcode Helper Extension",
   "version": "1.0",
   "description": "A helper extension for LeetCode",
-  "permissions": ["scripting", "activeTab"],
+  "permissions": ["scripting"],
   "host_permissions": [
-    "https://api.openai.com/*"
+    "https://leetcode.com/*"
   ],
   "background": {
     "service_worker": "src/background.js"

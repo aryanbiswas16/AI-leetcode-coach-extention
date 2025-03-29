@@ -9,6 +9,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         getLeetCodeDataAndFetchSolution().then(sendResponse);
         return true;
     }
+    if (request.action === 'executeScriptForCode') {
+        chrome.scripting.executeScript(
+            {
+                target: { tabId: sender.tab.id },
+                world: 'MAIN', // Run in the page's context
+                func: () => {
+                    const editor = window.monaco?.editor;
+                    if (editor) {
+                        const models = editor.getModels();
+                        return models.length ? models[0].getValue() : null;
+                    }
+                    return null;
+                }
+            },
+            (results) => {
+                if (chrome.runtime.lastError) {
+                    console.error('Error executing script:', chrome.runtime.lastError.message);
+                    sendResponse({ code: null });
+                } else {
+                    const code = results && results[0]?.result;
+                    sendResponse({ code });
+                }
+            }
+        );
+        return true; // Keep the message channel open for async response
+    }
 });
 
 async function getLeetCodeDataAndFetchAIResponse() {
