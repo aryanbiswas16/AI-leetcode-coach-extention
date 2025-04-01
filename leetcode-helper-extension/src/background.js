@@ -1,4 +1,4 @@
-const OPENAI_API_KEY = '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';
+const OPENAI_API_KEY = 'YOUR-KEY';
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'getAIResponse') {
