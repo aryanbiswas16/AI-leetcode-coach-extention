@@ -9,14 +9,22 @@
         <div class="tab-button active" data-tab="hint">Hint</div>
         <div class="tab-button" data-tab="solution">Solution</div>
     </div>
+    
     <div class="container">
         <div id="hint-tab" class="tab-content active">
             <textarea id="message" readonly></textarea>
-            <button id="HintButton">Hint</button>
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" id="hint-input" placeholder="Ask for a hint...">
+                <button id="HintButton">Send</button>
+            </div>
         </div>
+        
         <div id="solution-tab" class="tab-content">
             <textarea id="solution-message" readonly></textarea>
-            <button id="SolutionButton">Get Solution</button>
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" id="solution-input" placeholder="Ask for a solution...">
+                <button id="SolutionButton">Send</button>
+            </div>
         </div>
     </div>
     <script src="./popup.js"></script>

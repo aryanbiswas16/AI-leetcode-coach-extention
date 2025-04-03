@@ -14,27 +14,41 @@ document.querySelectorAll('.tab-button').forEach(button => {
 // Hint button functionality
 document.getElementById('HintButton').addEventListener('click', async function() {
     const messageElement = document.getElementById('message');
+    const inputElement = document.getElementById('hint-input');
+    const userQuestion = inputElement.value.trim();
+
     messageElement.value = 'Loading...';
 
-    chrome.runtime.sendMessage({ action: 'getAIResponse' }, (response) => {
+    chrome.runtime.sendMessage({ 
+        action: 'getAIResponse',
+        question: userQuestion 
+    }, (response) => {
         if (chrome.runtime.lastError) {
             messageElement.value = `Error: ${chrome.runtime.lastError.message}`;
         } else {
             messageElement.value = response;
         }
+        inputElement.value = ''; 
     });
 });
 
 // Solution button functionality
 document.getElementById('SolutionButton').addEventListener('click', async function() {
     const messageElement = document.getElementById('solution-message');
+    const inputElement = document.getElementById('solution-input');
+    const userQuestion = inputElement.value.trim();
+
     messageElement.value = 'Loading solution...';
 
-    chrome.runtime.sendMessage({ action: 'getSolution' }, (response) => {
+    chrome.runtime.sendMessage({ 
+        action: 'getSolution',
+        question: userQuestion 
+    }, (response) => {
         if (chrome.runtime.lastError) {
             messageElement.value = `Error: ${chrome.runtime.lastError.message}`;
         } else {
             messageElement.value = response;
         }
+        inputElement.value = ''; 
     });
 });
