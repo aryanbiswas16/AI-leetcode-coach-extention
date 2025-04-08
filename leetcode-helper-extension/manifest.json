@@ -3,7 +3,7 @@
   "name": "Leetcode Helper Extension",
   "version": "1.0",
   "description": "A helper extension for LeetCode",
-  "permissions": ["scripting"],
+  "permissions": ["scripting", "storage"],
   "host_permissions": [
     "https://leetcode.com/*"
   ],

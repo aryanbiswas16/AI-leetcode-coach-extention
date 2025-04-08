@@ -1,12 +1,12 @@
-const OPENAI_API_KEY = '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';
+const OPENAI_API_KEY = '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';
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'getAIResponse') {
         getLeetCodeDataAndFetchAIResponse(request.question).then(sendResponse);
         return true; 
     }
-    if (request.action === 'getSolution') {
-        getLeetCodeDataAndFetchSolution(request.question).then(sendResponse);
+    if (request.action === 'getNotes') {
+        getLeetCodeDataAndFetchNotes().then(sendResponse);
         return true;
     }
     if (request.action === 'executeScriptForCode') {
@@ -55,15 +55,14 @@ async function getLeetCodeDataAndFetchAIResponse(userQuestion) {
     }
 }
 
-async function getLeetCodeDataAndFetchSolution(userQuestion) {
+async function getLeetCodeDataAndFetchNotes() {
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         const leetCodeData = await new Promise((resolve) => {
             chrome.tabs.sendMessage(tab.id, { action: 'getLeetCodeData' }, resolve);
         });
         
-        leetCodeData.userQuestion = userQuestion;
-        const prompt = createSolutionPrompt(leetCodeData);
+        const prompt = createNotesPrompt(leetCodeData);
         return await fetchAIResponse(prompt);
     } catch (error) {
         console.error('Error:', error);
@@ -89,17 +88,26 @@ function createPromptFromLeetCodeData(leetCodeData) {
     `;
 }
 
-function createSolutionPrompt(leetCodeData) {
-    const { problemData, userQuestion } = leetCodeData;
+function createNotesPrompt(leetCodeData) {
+    const { problemData, codeSnippet } = leetCodeData;  // Add codeSnippet
     return `
-        Please provide a detailed solution for this LeetCode problem:
+        Please create structured study notes for this LeetCode problem that I can reference in the future:
         Title: ${problemData.title}
         Difficulty: ${problemData.difficulty}
         Description: ${problemData.description}
         
-        User's Specific Question: ${userQuestion || 'Please provide a complete solution approach.'}
+        Current Code:
+        ${codeSnippet || 'No code provided'}
         
-        ${userQuestion ? 'Focus on answering the user\'s specific question while providing relevant solution details.' : 'Explain the solution approach and provide the code implementation.'}
+        Format the notes as follows:
+        1. Problem Pattern/Category
+        2. Key Insights
+        3. Step-by-Step Solution Approach
+        4. Time and Space Complexity
+        5. Common Pitfalls to Avoid
+        6. Similar Problems to Practice
+
+        Keep the notes focused on the logical approach to solving this type of problem.
     `;
 }
 
@@ -117,7 +125,8 @@ async function fetchAIResponse(prompt) {
                     role: 'user',
                     content: prompt
                 }],
-                max_tokens: 200
+                max_tokens: 1000,  // Increased from 200 to 1000 for more detailed notes
+                temperature: 0.7   // Added for more consistent responses
             })
         });
 

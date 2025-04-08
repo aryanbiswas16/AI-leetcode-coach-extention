@@ -7,7 +7,7 @@
 <body>
     <div class="header">
         <div class="tab-button active" data-tab="hint">Hint</div>
-        <div class="tab-button" data-tab="solution">Solution</div>
+        <div class="tab-button" data-tab="notes">Notes</div>
     </div>
     
     <div class="container">
@@ -19,11 +19,10 @@
             </div>
         </div>
         
-        <div id="solution-tab" class="tab-content">
-            <textarea id="solution-message" readonly></textarea>
+        <div id="notes-tab" class="tab-content">
+            <textarea id="notes-input" placeholder="Write your notes here..."></textarea>
             <div class="chat-input-container">
-                <input type="text" class="chat-input" id="solution-input" placeholder="Ask for a solution...">
-                <button id="SolutionButton">Send</button>
+                <button id="SaveNotesButton">Save Notes</button>
             </div>
         </div>
     </div>

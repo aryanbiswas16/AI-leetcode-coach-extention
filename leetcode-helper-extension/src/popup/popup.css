@@ -86,7 +86,7 @@ button:hover {
     background-color: #666966;
 }
 
-#message, #solution-message {
+#message, #notes-input {
     margin-top: 10px;
     font-size: 14px;
     color: aliceblue;
@@ -99,3 +99,4 @@ button:hover {
     outline: none;
     resize: none;
 }
+

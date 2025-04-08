@@ -143,6 +143,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
         return true;
     }
+
+    if (request.action === 'addToLeetCodeNotes') {
+        setTimeout(() => {
+            const success = addToLeetCodeNotes(request.notes);
+            sendResponse({ success });
+        }, 500);
+        return true;  // Will respond asynchronously
+    }
 });
 
 // Additional code to handle LeetCode's SPA behavior
@@ -170,149 +178,41 @@ setTimeout(() => {
     console.log('Initial page data:', initialData);
 }, 3000);
 
-// Function to add a new tab for the extension
-function addExtensionTab() {
-    // Use MutationObserver to detect when the tab structure is loaded
-    const observer = new MutationObserver((mutations, obs) => {
-        // Try multiple possible selectors for the tab container
-        const tabContainer = document.querySelector('.flexlayout__tabset_tabbar_inner_tab_container') || 
-                            document.querySelector('[role="tablist"]') || 
-                            document.querySelector('[data-cy="question-detail-tabs"]');
-        
-        if (tabContainer) {
-            obs.disconnect(); // Stop observing once we find the tab container
-            console.log('Tab container found:', tabContainer);
+function addToLeetCodeNotes(notes) {
+    // Try to find the notes tab first
+    const notesTab = document.querySelector('[data-cy="notes-tab"]') ||
+                    document.querySelector('button[data-track-target="Notes"]');
+    
+    // Click the notes tab if it exists
+    if (notesTab) {
+        notesTab.click();
+        // Wait a moment for the notes interface to load
+        setTimeout(() => {
+            const notesTextArea = document.querySelector('[data-cy="note-area"]') || 
+                                document.querySelector('textarea[placeholder*="note"]') ||
+                                document.querySelector('.notewrap textarea');
             
-            // Create the new tab button following LeetCode's structure
-            const existingTab = tabContainer.querySelector('div.flexlayout__tab_button') || 
-                               tabContainer.querySelector('button[role="tab"]');
-            
-            if (!existingTab) {
-                console.error('Could not find existing tab to copy styles from');
-                return;
-            }
-            
-            const extensionTab = document.createElement(existingTab.tagName); // Use same element type (div or button)
-            extensionTab.className = existingTab.className;
-            
-            // Remove selected class if present and add unselected class
-            extensionTab.className = extensionTab.className
-                .replace('flexlayout__tab_button--selected', '')
-                .replace('active', '') + ' flexlayout__tab_button--unselected';
-            
-            if (existingTab.hasAttribute('role')) {
-                extensionTab.setAttribute('role', 'tab');
-            }
-            
-            // Copy the inner structure but change the text
-            extensionTab.innerHTML = existingTab.innerHTML;
-            
-            // Find the text element and replace it
-            const textElement = extensionTab.querySelector('.normal') || 
-                               extensionTab.querySelector('div:not([class])');
-            
-            if (textElement) {
-                textElement.textContent = 'Extension';
-            }
-            
-            // Also update any other text elements
-            const otherTextElements = extensionTab.querySelectorAll('.medium, .whitespace-nowrap');
-            otherTextElements.forEach(el => {
-                el.textContent = 'Extension';
-            });
-            
-            // Create content container
-            const contentContainer = document.createElement('div');
-            contentContainer.id = 'extension-content';
-            
-            // Copy attributes from existing tab panel
-            const existingPanel = document.querySelector('[role="tabpanel"]') || 
-                                 document.querySelector('.flexlayout__tabset_content');
-            
-            if (existingPanel) {
-                contentContainer.className = existingPanel.className;
+            if (notesTextArea) {
+                // Set the value of the textarea
+                notesTextArea.value = notes;
                 
-                if (existingPanel.hasAttribute('role')) {
-                    contentContainer.setAttribute('role', 'tabpanel');
+                // Trigger input event
+                const inputEvent = new Event('input', { bubbles: true });
+                notesTextArea.dispatchEvent(inputEvent);
+                
+                // Find and click the save button if it exists
+                const saveButton = document.querySelector('[data-cy="note-save-btn"]') ||
+                                 document.querySelector('button[data-track-target="saveNote"]');
+                if (saveButton) {
+                    saveButton.click();
                 }
                 
-                contentContainer.style.display = 'none';
-                
-                // Add initial content
-                contentContainer.innerHTML = `
-                    <div class="relative">
-                        <div class="bg-layer-1 dark:bg-dark-layer-1 rounded-lg p-4">
-                            <div class="text-label-1 dark:text-dark-label-1">
-                                <h3 class="text-lg font-medium">AI Assistant</h3>
-                                <div class="mt-4">
-                                    <button class="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">
-                                        Get Hint
-                                    </button>
-                                    <button class="ml-4 px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700">
-                                        Get Solution
-                                    </button>
-                                </div>
-                                <div class="mt-4 p-4 bg-gray-900 rounded">
-                                    <pre class="text-white whitespace-pre-wrap"></pre>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                // Add click handler
-                extensionTab.addEventListener('click', () => {
-                    console.log('Extension tab clicked');
-                    
-                    // Find all tabs and deactivate them
-                    const allTabs = tabContainer.querySelectorAll('div.flexlayout__tab_button, button[role="tab"]');
-                    allTabs.forEach(tab => {
-                        tab.classList.remove('flexlayout__tab_button--selected', 'active');
-                        tab.classList.add('flexlayout__tab_button--unselected');
-                        
-                        if (tab.hasAttribute('aria-selected')) {
-                            tab.setAttribute('aria-selected', 'false');
-                        }
-                    });
-                    
-                    // Activate our tab
-                    extensionTab.classList.remove('flexlayout__tab_button--unselected');
-                    extensionTab.classList.add('flexlayout__tab_button--selected', 'active');
-                    
-                    if (extensionTab.hasAttribute('aria-selected')) {
-                        extensionTab.setAttribute('aria-selected', 'true');
-                    }
-                    
-                    // Find all panels and hide them
-                    const panelsContainer = existingPanel.parentNode;
-                    const allPanels = panelsContainer.querySelectorAll('[role="tabpanel"], .flexlayout__tabset_content');
-                    
-                    allPanels.forEach(panel => {
-                        panel.style.display = 'none';
-                    });
-                    
-                    // Show our content
-                    contentContainer.style.display = 'block';
-                });
-                
-                // Add the tab to the page
-                tabContainer.appendChild(extensionTab);
-                
-                // Add the content panel to the page
-                panelsContainer = existingPanel.parentNode;
-                panelsContainer.appendChild(contentContainer);
-                
-                console.log('Extension tab added successfully');
-            } else {
-                console.error('Could not find existing tab panel');
+                return true;
             }
-        }
-    });
+        }, 1000);
+    }
     
-    // Start observing the document with the configured parameters
-    observer.observe(document.body, { childList: true, subtree: true });
-    console.log('Observer started to find tab container');
+    return false;
 }
 
-// Call the function when the page loads
-addExtensionTab();
+

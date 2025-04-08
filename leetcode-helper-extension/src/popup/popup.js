@@ -32,23 +32,33 @@ document.getElementById('HintButton').addEventListener('click', async function()
     });
 });
 
-// Solution button functionality
-document.getElementById('SolutionButton').addEventListener('click', async function() {
-    const messageElement = document.getElementById('solution-message');
-    const inputElement = document.getElementById('solution-input');
-    const userQuestion = inputElement.value.trim();
-
-    messageElement.value = 'Loading solution...';
+// Notes button functionality
+document.getElementById('SaveNotesButton').addEventListener('click', function() {
+    const notesInput = document.getElementById('notes-input');
+    notesInput.value = 'Loading study notes...';
 
     chrome.runtime.sendMessage({ 
-        action: 'getSolution',
-        question: userQuestion 
-    }, (response) => {
+        action: 'getNotes'
+    }, (notes) => {
         if (chrome.runtime.lastError) {
-            messageElement.value = `Error: ${chrome.runtime.lastError.message}`;
+            notesInput.value = `Error: ${chrome.runtime.lastError.message}`;
         } else {
-            messageElement.value = response;
+            notesInput.value = notes;
+            // Send the notes to content script to add to LeetCode
+            chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                chrome.tabs.sendMessage(tabs[0].id, {
+                    action: 'addToLeetCodeNotes',
+                    notes: notes
+                }, function(response) {
+                    if (response && response.success) {
+                        notesInput.value += '\n\nNotes successfully added to LeetCode!';
+                    } else {
+                        notesInput.value += '\n\nCouldn\'t find LeetCode notes section. Please make sure you\'re on a problem page.';
+                    }
+                });
+            });
         }
-        inputElement.value = ''; 
     });
 });
+
+
