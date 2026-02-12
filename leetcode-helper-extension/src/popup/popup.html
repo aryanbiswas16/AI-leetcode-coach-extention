@@ -1,31 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>LeetCode Helper</title>
+    <title>LeetCode Helper v2.0</title>
     <link rel="stylesheet" href="./popup.css">
 </head>
 <body>
     <div class="header">
-        <div class="tab-button active" data-tab="hint">Hint</div>
-        <div class="tab-button" data-tab="notes">Notes</div>
+        <div class="logo">🧩 LeetCode Helper</div>
+        <div class="version">v2.0</div>
+    </div>
+    
+    <div class="tabs">
+        <div class="tab-button active" data-tab="hint">💡 Get Hint</div>
+        <div class="tab-button" data-tab="notes">📝 Study Notes</div>
     </div>
     
     <div class="container">
+        <!-- Hint Tab -->
         <div id="hint-tab" class="tab-content active">
-            <textarea id="message" readonly></textarea>
-            <div class="chat-input-container">
-                <input type="text" class="chat-input" id="hint-input" placeholder="Ask for a hint...">
-                <button id="HintButton">Send</button>
+            <div class="quick-hints">
+                <button class="quick-hint" data-hint="approach">Approach</button>
+                <button class="quick-hint" data-hint="bug">Find Bug</button>
+                <button class="quick-hint" data-hint="optimize">Optimize</button>
+                <button class="quick-hint" data-hint="explain">Explain</button>
+            </div>
+            
+            <textarea id="message" readonly placeholder="Ask a question to get a hint..."></textarea>
+            
+            <div class="input-container">
+                <input type="text" class="chat-input" id="hint-input" placeholder="Ask for help with this problem...">
+                <button id="HintButton" class="primary-btn">Send</button>
             </div>
         </div>
         
+        <!-- Notes Tab -->
         <div id="notes-tab" class="tab-content">
-            <textarea id="notes-input" readonly placeholder="Click 'Generate Notes' to create study notes..."></textarea>
-            <div class="chat-input-container">
-                <button id="SaveNotesButton">Generate Notes</button>
+            <textarea id="notes-input" readonly placeholder="Click 'Generate Notes' to create comprehensive study notes for this problem..."></textarea>
+            
+            <div class="button-row">
+                <button id="SaveNotesButton" class="primary-btn">Generate Notes</button>
+                <button id="CopyNotesButton" class="secondary-btn">Copy</button>
             </div>
         </div>
     </div>
+    
+    <div class="footer">
+        <span>Powered by Kimi AI</span>
+        <span class="status" id="status-indicator">🟢 Ready</span>
+    </div>
+    
     <script src="./popup.js"></script>
 </body>
 </html>

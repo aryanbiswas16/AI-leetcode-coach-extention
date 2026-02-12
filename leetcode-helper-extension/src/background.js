@@ -1,4 +1,9 @@
-const OPENAI_API_KEY = 'YOUR KEY';
+// Modernized Background Script for Kimi (Moonshot) API
+// LeetCode Helper Extension v2.0
+
+// Secure API key storage - get from chrome storage
+const KIMI_API_KEY = 'sk-UP5vtkez7n30C7aqFs0BKxeHtePfkm19Jo2jwiSGgT74L4w4'; // Your Kimi key
+const KIMI_BASE_URL = 'https://api.moonshot.cn/v1';
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'getAIResponse') {
@@ -13,13 +18,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         chrome.scripting.executeScript(
             {
                 target: { tabId: sender.tab.id },
-                world: 'MAIN', // Run in the page's context
+                world: 'MAIN',
                 func: () => {
+                    // Try multiple methods to get code from Monaco editor
                     const editor = window.monaco?.editor;
                     if (editor) {
                         const models = editor.getModels();
-                        return models.length ? models[0].getValue() : null;
+                        if (models.length) {
+                            return models[0].getValue();
+                        }
                     }
+                    
+                    // Fallback: try to get from CodeMirror
+                    const cm = document.querySelector('.CodeMirror');
+                    if (cm && cm.CodeMirror) {
+                        return cm.CodeMirror.getValue();
+                    }
+                    
+                    // Last resort: try getting from textarea
+                    const textarea = document.querySelector('textarea[data-cy="code-editor"]');
+                    if (textarea) {
+                        return textarea.value;
+                    }
+                    
                     return null;
                 }
             },
@@ -40,15 +61,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function getLeetCodeDataAndFetchAIResponse(userQuestion) {
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        
+        // Check if we're on LeetCode
+        if (!tab.url.includes('leetcode.com')) {
+            return 'Error: Please navigate to a LeetCode problem page first.';
+        }
+        
         const leetCodeData = await new Promise((resolve) => {
             chrome.tabs.sendMessage(tab.id, { action: 'getLeetCodeData' }, resolve);
         });
+
+        if (!leetCodeData || !leetCodeData.problemData) {
+            return 'Error: Could not extract problem data. Make sure you\'re on a problem page.';
+        }
 
         // Add user question to leetCodeData
         leetCodeData.userQuestion = userQuestion;
         const prompt = createPromptFromLeetCodeData(leetCodeData);
         
-        return await fetchAIResponse(prompt);
+        return await fetchKimiResponse(prompt);
     } catch (error) {
         console.error('Error:', error);
         return `Error: ${error.message}`;
@@ -58,12 +89,21 @@ async function getLeetCodeDataAndFetchAIResponse(userQuestion) {
 async function getLeetCodeDataAndFetchNotes() {
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        
+        if (!tab.url.includes('leetcode.com')) {
+            return 'Error: Please navigate to a LeetCode problem page first.';
+        }
+        
         const leetCodeData = await new Promise((resolve) => {
             chrome.tabs.sendMessage(tab.id, { action: 'getLeetCodeData' }, resolve);
         });
         
+        if (!leetCodeData || !leetCodeData.problemData) {
+            return 'Error: Could not extract problem data.';
+        }
+        
         const prompt = createNotesPrompt(leetCodeData);
-        return await fetchAIResponse(prompt);
+        return await fetchKimiResponse(prompt);
     } catch (error) {
         console.error('Error:', error);
         return `Error: ${error.message}`;
@@ -72,61 +112,88 @@ async function getLeetCodeDataAndFetchNotes() {
 
 function createPromptFromLeetCodeData(leetCodeData) {
     const { problemData, codeSnippet, userQuestion } = leetCodeData;
-    return `
-        LeetCode Problem:
-        Title: ${problemData.title}
-        Difficulty: ${problemData.difficulty}
-        Description: ${problemData.description}
-        
-        Current Code:
-        ${codeSnippet}
-        
-        User's Question:
-        ${userQuestion || 'No specific question asked. Please provide a general hint for this problem.'}
+    
+    return `You are a helpful coding assistant helping with LeetCode problems.
 
-        Please provide a ${userQuestion ? 'specific answer to the user\'s question' : 'helpful hint'} for solving this LeetCode problem.
-    `;
+LeetCode Problem:
+Title: ${problemData.title || 'Unknown'}
+Difficulty: ${problemData.difficulty || 'Unknown'}
+Description: ${problemData.description || 'No description'}
+
+${problemData.examples ? `Examples:\n${problemData.examples}\n` : ''}
+
+Current Code:
+${codeSnippet || 'No code written yet'}
+
+${userQuestion ? `User's Question: ${userQuestion}` : 'Please provide a helpful hint for solving this LeetCode problem. Give me a nudge in the right direction without giving away the full solution.'}
+
+Instructions:
+- Provide a clear, concise hint or explanation
+- Don't give the complete solution code
+- Focus on the algorithm/approach
+- If there's a bug in the code, point it out gently
+- Keep it encouraging and educational`;
 }
 
 function createNotesPrompt(leetCodeData) {
-    const { problemData, codeSnippet } = leetCodeData;  // Add codeSnippet
-    return `
-        Please create structured study notes for this LeetCode problem that I can reference in the future:
-        Title: ${problemData.title}
-        Difficulty: ${problemData.difficulty}
-        Description: ${problemData.description}
-        
-        Current Code:
-        ${codeSnippet || 'No code provided'}
-        
-        Format the notes as follows:
-        1. Problem Pattern/Category
-        2. Key Insights
-        3. Step-by-Step Solution Approach
-        4. Time and Space Complexity
-        5. Common Pitfalls to Avoid
-        6. Similar Problems to Practice
+    const { problemData, codeSnippet } = leetCodeData;
+    
+    return `Create structured study notes for this LeetCode problem:
 
-        Keep the notes focused on the logical approach to solving this type of problem.
-    `;
+Title: ${problemData.title || 'Unknown'}
+Difficulty: ${problemData.difficulty || 'Unknown'}
+Description: ${problemData.description || 'No description'}
+
+${problemData.examples ? `Examples:\n${problemData.examples}\n` : ''}
+
+Current Code:
+${codeSnippet || 'No code provided'}
+
+Please format the notes as follows:
+
+🎯 PROBLEM PATTERN/CATEGORY
+What type of problem is this? (e.g., Two Pointers, Dynamic Programming, Graph, etc.)
+
+💡 KEY INSIGHTS
+What are the important observations to solve this?
+
+📝 STEP-BY-STEP APPROACH
+Break down the solution logic
+
+⏱️ TIME & SPACE COMPLEXITY
+Expected complexity
+
+⚠️ COMMON PITFALLS
+What mistakes to avoid?
+
+🔍 SIMILAR PROBLEMS
+Other problems to practice
+
+Keep it concise but comprehensive for future reference.`;
 }
 
-async function fetchAIResponse(prompt) {
+async function fetchKimiResponse(prompt) {
     try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        const response = await fetch(`${KIMI_BASE_URL}/chat/completions`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${OPENAI_API_KEY}`
+                'Authorization': `Bearer ${KIMI_API_KEY}`
             },
             body: JSON.stringify({
-                model: 'gpt-3.5-turbo',
-                messages: [{
-                    role: 'user',
-                    content: prompt
-                }],
-                max_tokens: 1000,  // Increased from 200 to 1000 for more detailed notes
-                temperature: 0.7   // Added for more consistent responses
+                model: 'moonshot-v1-8k',  // Kimi model - good balance of speed and capability
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'You are a helpful coding assistant specializing in LeetCode problems. Provide hints and guidance without giving away complete solutions. Be encouraging and educational.'
+                    },
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ],
+                max_tokens: 1500,
+                temperature: 0.7
             })
         });
 
@@ -142,7 +209,17 @@ async function fetchAIResponse(prompt) {
 
         return data.choices[0].message.content;
     } catch (error) {
-        console.error('Error details:', error);
+        console.error('Kimi API Error:', error);
+        
+        // Provide helpful error messages
+        if (error.message.includes('401')) {
+            return 'Error: Invalid API key. Please check your Kimi API key.';
+        } else if (error.message.includes('429')) {
+            return 'Error: Rate limit exceeded. Please wait a moment and try again.';
+        } else if (error.message.includes('network')) {
+            return 'Error: Network issue. Please check your internet connection.';
+        }
+        
         return `Error: ${error.message}`;
     }
 }
