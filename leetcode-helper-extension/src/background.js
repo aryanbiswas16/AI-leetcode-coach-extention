@@ -1,8 +1,8 @@
 // Modernized Background Script for Kimi (Moonshot) API
 // LeetCode Helper Extension v2.0
 
-// Secure API key storage - get from chrome storage
-const KIMI_API_KEY = 'sk-UP5vtkez7n30C7aqFs0BKxeHtePfkm19Jo2jwiSGgT74L4w4'; // Your Kimi key
+// API key - add your Kimi API key here
+const KIMI_API_KEY = 'YOUR_KIMI_API_KEY_HERE';
 const KIMI_BASE_URL = 'https://api.moonshot.cn/v1';
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
